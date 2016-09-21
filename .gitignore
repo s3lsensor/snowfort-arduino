@@ -30,3 +30,10 @@
 
 # virtual env
 venv*
+
+# txt file
+*.txt
+*.csv
+
+# py
+*.pyc

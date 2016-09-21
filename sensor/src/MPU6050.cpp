@@ -23,6 +23,7 @@ int MPU6050::sample(void)
 {
     int error;
     _ts = millis();
+    // _ts = micros();
     error = read(MPU6050_ACCEL_XOUT_H, (uint8_t*)&_data, MPU6050_DATA_SIZE);
 
     SWAP(_data.reg.x_accel_h, _data.reg.x_accel_l);
@@ -64,6 +65,13 @@ MPU6050_VALUE_TS MPU6050::getTs(void)
     data_ts.ms_time = _ts;
     data_ts.value = _data.value;
     return data_ts;
+}
+
+// --------------------------------------------------------
+void MPU6050::getTs(MPU6050_VALUE_TS* data_ts)
+{
+    data_ts->ms_time = _ts;
+    data_ts->value = _data.value;
 }
 
 // --------------------------------------------------------

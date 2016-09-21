@@ -5,7 +5,7 @@
 #ifndef HttpClient_h
 #define HttpClient_h
 
-#define LOGGING
+//#define LOGGING
 
 #include <Arduino.h>
 #include <IPAddress.h>
@@ -314,11 +314,13 @@ protected:
 
     // Number of milliseconds that we wait each time there isn't any data
     // available to be read (during status code and header processing)
-    static const int kHttpWaitForDataDelay = 1000;
+    // static const int kHttpWaitForDataDelay = 1000;
+    static const int kHttpWaitForDataDelay = 500;
     // Number of milliseconds that we'll wait in total without receiveing any
     // data before returning HTTP_ERROR_TIMED_OUT (during status code and header
     // processing)
-    static const int kHttpResponseTimeout = 30*1000;
+    // static const int kHttpResponseTimeout = 30*1000;
+    static const int kHttpResponseTimeout = 2*1000;
     static const char* kContentLengthPrefix;
     typedef enum {
         eIdle,

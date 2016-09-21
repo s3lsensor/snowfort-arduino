@@ -4,7 +4,7 @@
 
 #include "HttpClient.h"
 #include "b64.h"
-#define LOGGING
+//#define LOGGING
 
 // Initialize constants
 const char* HttpClient::kUserAgent = "Arduino/2.2.0";
@@ -71,15 +71,6 @@ int HttpClient::startRequest(const char* aURLPath, const char* aHttpMethod,
     }
 
     tHttpState initialState = iState;
-
-    // Serial.print(aContentLength, DEC);
-    // Serial.print(", ");
-    // Serial.print(aURLPath);
-    // Serial.print(", ");
-    // Serial.print(aContentType);
-    // Serial.print(", ");
-    // Serial.println(aHttpMethod);
-    // Serial.println((char*)aBody);
 
     if ((eIdle != iState) && (eRequestStarted != iState))
     {

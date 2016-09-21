@@ -82,7 +82,7 @@ typedef union
 
 typedef struct
 {
-    unsigned long ms_time;
+    uint32_t ms_time;
     MPU6050_VALUE value;
 }MPU6050_VALUE_TS;
 
@@ -107,6 +107,7 @@ class MPU6050
         uint8_t cycleMode(uint8_t status);
         int32_t sampleSum(void);
         MPU6050_VALUE_TS getTs(void);
+        void getTs(MPU6050_VALUE_TS* data_ts);
         String getString(MPU6050_VALUE data);
         String getString(MPU6050_VALUE_TS data);
         void disp(MPU6050_VALUE data);
