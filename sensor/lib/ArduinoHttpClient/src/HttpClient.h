@@ -320,7 +320,7 @@ protected:
     // data before returning HTTP_ERROR_TIMED_OUT (during status code and header
     // processing)
     // static const int kHttpResponseTimeout = 30*1000;
-    static const int kHttpResponseTimeout = 2*1000;
+    static const int kHttpResponseTimeout = 1500;
     static const char* kContentLengthPrefix;
     typedef enum {
         eIdle,

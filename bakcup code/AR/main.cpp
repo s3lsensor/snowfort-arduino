@@ -48,40 +48,39 @@ void getMPUdata(void)
     mpu6050.getTs(&mpu6050_data);
 
     // update AR related variables
-    // float data_var[6];
-    // data_var[0] = (float)mpu6050_data.value.accel_x;
-    // data_var[1] = (float)mpu6050_data.value.accel_y;
-    // data_var[2] = (float)mpu6050_data.value.accel_z;
-    // data_var[3] = (float)mpu6050_data.value.gyro_x;
-    // data_var[4] = (float)mpu6050_data.value.gyro_y;
-    // data_var[5] = (float)mpu6050_data.value.gyro_z;
-    //
-    // uint8_t i;
-    // for(i = 0; i < 6; i++)
-    // {
-    //     X[i] += data_var[i];
-    //     X2[i] += data_var[i] * data_var[i];
-    // }
+    float data_var[6];
+    data_var[0] = (float)mpu6050_data.value.accel_x;
+    data_var[1] = (float)mpu6050_data.value.accel_y;
+    data_var[2] = (float)mpu6050_data.value.accel_z;
+    data_var[3] = (float)mpu6050_data.value.gyro_x;
+    data_var[4] = (float)mpu6050_data.value.gyro_y;
+    data_var[5] = (float)mpu6050_data.value.gyro_z;
+
+    uint8_t i;
+    for(i = 0; i < 6; i++)
+    {
+        X[i] += data_var[i];
+        X2[i] += data_var[i] * data_var[i];
+    }
 
 
     if(!QueueToAdd->push(mpu6050_data))
     {
         Serial.println("Queue is Full");
 
-        QueueToAdd->pop();
-        // MPU6050_VALUE_TS data_pop = QueueToAdd->pop();
-        // data_var[0] = (float)data_pop.value.accel_x;
-        // data_var[1] = (float)data_pop.value.accel_y;
-        // data_var[2] = (float)data_pop.value.accel_z;
-        // data_var[3] = (float)data_pop.value.gyro_x;
-        // data_var[4] = (float)data_pop.value.gyro_y;
-        // data_var[5] = (float)data_pop.value.gyro_z;
-        //
-        // for(i = 0; i < 6; i++)
-        // {
-        //     X[i] -= data_var[i];
-        //     X2[i] -= data_var[i] * data_var[i];
-        // }
+        MPU6050_VALUE_TS data_pop = QueueToAdd->pop();
+        data_var[0] = (float)data_pop.value.accel_x;
+        data_var[1] = (float)data_pop.value.accel_y;
+        data_var[2] = (float)data_pop.value.accel_z;
+        data_var[3] = (float)data_pop.value.gyro_x;
+        data_var[4] = (float)data_pop.value.gyro_y;
+        data_var[5] = (float)data_pop.value.gyro_z;
+
+        for(i = 0; i < 6; i++)
+        {
+            X[i] -= data_var[i];
+            X2[i] -= data_var[i] * data_var[i];
+        }
 
         QueueToAdd->push(mpu6050_data);
     }
@@ -166,7 +165,7 @@ void setup() {
 
 /********************************************/
 void loop() {
-    if(QueueToAdd->count() < 100)
+    if(QueueToAdd->count() < 300)
         return;
 
     QueueArray<MPU6050_VALUE_TS>* temp;
@@ -175,19 +174,19 @@ void loop() {
     QueueToAdd = temp;
     QueueToAdd->reset();
 
-    // // compute AR mean & variance
-    // float AR_mean[6], AR_std[6], temp_AR;
-    // uint16_t i,j;
-    // for(i = 0; i < 6; i++)
-    // {
-    //     temp_AR = X[i]/300.0;
-    //     AR_mean[i] = temp_AR;
-    //     AR_std[i] = sqrtf(X2[i]/300.0 - temp_AR*temp_AR);
-    // }
-    //
-    // //reset AR variables
-    // memset(X,0,6);
-    // memset(X2,0,6);
+    // compute AR mean & variance
+    float AR_mean[6], AR_std[6], temp_AR;
+    uint16_t i,j;
+    for(i = 0; i < 6; i++)
+    {
+        temp_AR = X[i]/300.0;
+        AR_mean[i] = temp_AR;
+        AR_std[i] = sqrtf(X2[i]/300.0 - temp_AR*temp_AR);
+    }
+
+    //reset AR variables
+    memset(X,0,6);
+    memset(X2,0,6);
 
     // if(QueueToPost->count() == 0)
     //     return;
@@ -203,11 +202,11 @@ void loop() {
     MPU6050_VALUE_TS data_ts;
     MPU6050_HTTP_init();
     uint16_t Q_counter = 0;
-    // float y[6];
-    // float X_mat[6][AR_ORDER];
-    // uint16_t SGD_counter = 0;
-    // float error = 0;
-    // float AR_coeff[6][AR_ORDER] = {0};
+    float y[6];
+    float X_mat[6][AR_ORDER];
+    uint16_t SGD_counter = 0;
+    float error = 0;
+    float AR_coeff[6][AR_ORDER] = {0};
 
     while(!QueueToPost->isEmpty())
     {
@@ -215,45 +214,45 @@ void loop() {
         // data_ts = QueueToAdd->pop();
 
         // AR model -- normalize
-        // y[0] = ((float)data_ts.value.accel_x-AR_mean[0])/AR_std[0];
-        // y[1] = ((float)data_ts.value.accel_y-AR_mean[1])/AR_std[1];
-        // y[2] = ((float)data_ts.value.accel_z-AR_mean[2])/AR_std[2];
-        // y[3] = ((float)data_ts.value.gyro_x-AR_mean[3])/AR_std[3];
-        // y[4] = ((float)data_ts.value.gyro_y-AR_mean[4])/AR_std[4];
-        // y[5] = ((float)data_ts.value.gyro_z-AR_mean[5])/AR_std[5];
+        y[0] = ((float)data_ts.value.accel_x-AR_mean[0])/AR_std[0];
+        y[1] = ((float)data_ts.value.accel_y-AR_mean[1])/AR_std[1];
+        y[2] = ((float)data_ts.value.accel_z-AR_mean[2])/AR_std[2];
+        y[3] = ((float)data_ts.value.gyro_x-AR_mean[3])/AR_std[3];
+        y[4] = ((float)data_ts.value.gyro_y-AR_mean[4])/AR_std[4];
+        y[5] = ((float)data_ts.value.gyro_z-AR_mean[5])/AR_std[5];
 
-        // if(SGD_counter < AR_ORDER)
-        // {
-        //     for(i = 0; i < 6; i++)
-        //     {
-        //         X_mat[i][SGD_counter] = y[i];
-        //     }
-        // }
-        // else
-        // {
-        //     for(i = 0; i < 6; i++) // over variable
-        //     {
-        //         error = 0;
-        //         for(j=0; j< AR_ORDER; j++) // over data
-        //         {
-        //             error += X_mat[i][j] * AR_coeff[i][j];
-        //         }
-        //         error = error - y[i];
-        //
-        //         // learning rate
-        //         error = error * MU / SGD_counter;
-        //
-        //         // update coefficient & shift data
-        //         for(j=0; j< (AR_ORDER-1); j++)
-        //         {
-        //             AR_coeff[i][j] = AR_coeff[i][j] - error * X_mat[i][j];
-        //             X_mat[i][j] = X_mat[i][j+1];
-        //         }
-        //         AR_coeff[i][AR_ORDER-1] = AR_coeff[i][AR_ORDER-1] - error * X_mat[i][AR_ORDER-1];
-        //         X_mat[i][AR_ORDER-1] = y[i];
-        //     }
-        // }
-        // SGD_counter++;
+        if(SGD_counter < AR_ORDER)
+        {
+            for(i = 0; i < 6; i++)
+            {
+                X_mat[i][SGD_counter] = y[i];
+            }
+        }
+        else
+        {
+            for(i = 0; i < 6; i++) // over variable
+            {
+                error = 0;
+                for(j=0; j< AR_ORDER; j++) // over data
+                {
+                    error += X_mat[i][j] * AR_coeff[i][j];
+                }
+                error = error - y[i];
+
+                // learning rate
+                error = error * MU / SGD_counter;
+
+                // update coefficient & shift data
+                for(j=0; j< (AR_ORDER-1); j++)
+                {
+                    AR_coeff[i][j] = AR_coeff[i][j] - error * X_mat[i][j];
+                    X_mat[i][j] = X_mat[i][j+1];
+                }
+                AR_coeff[i][AR_ORDER-1] = AR_coeff[i][AR_ORDER-1] - error * X_mat[i][AR_ORDER-1];
+                X_mat[i][AR_ORDER-1] = y[i];
+            }
+        }
+        SGD_counter++;
 
 
         // push data
@@ -302,40 +301,40 @@ void loop() {
     }
 
     // send AR coefficient
-    // memset(&MPU_HTTP_POST[0],0,MAX_MPU6050_BUFFER_SIZE);
-    // buffer_size = 0;
-    // MPU_HTTP_POST[buffer_size++] = _BYTE('A');
-    // MPU_HTTP_POST[buffer_size++] = _BYTE('=');
-    // memcpy(&MPU_HTTP_POST[buffer_size],(byte*)&AR_coeff[0][0],AR_DATA_SIZE);
-    // buffer_size += AR_DATA_SIZE;
-    //
-    // MPU_HTTP_POST[buffer_size++] = _BYTE('&');
-    // MPU_HTTP_POST[buffer_size++] = _BYTE('&');
-    // MPU_HTTP_POST[buffer_size++] = _BYTE('&');
-    // MPU_HTTP_POST[buffer_size++] = _BYTE('I');
-    // MPU_HTTP_POST[buffer_size++] = _BYTE('=');
-    // String TX_counter_str = String(httpTXCounter, DEC);
-    // memcpy(&MPU_HTTP_POST[buffer_size], (byte*)TX_counter_str.c_str(), TX_counter_str.length());
-    // buffer_size += TX_counter_str.length();
-    // httpTXCounter++;
-    //
-    // // add mac address
-    // // only need last two bytes of mac address
-    // memcpy(&MPU_HTTP_POST[buffer_size], mac_addr_str.c_str(), mac_addr_str.length());
-    // buffer_size += mac_addr_str.length();
+    memset(&MPU_HTTP_POST[0],0,MAX_MPU6050_BUFFER_SIZE);
+    buffer_size = 0;
+    MPU_HTTP_POST[buffer_size++] = _BYTE('A');
+    MPU_HTTP_POST[buffer_size++] = _BYTE('=');
+    memcpy(&MPU_HTTP_POST[buffer_size],(byte*)&AR_coeff[0][0],AR_DATA_SIZE);
+    buffer_size += AR_DATA_SIZE;
 
-// #ifdef DEBUG
-//         Serial.print("AR coeff: ");
-//         Serial.print(AR_coeff[0][0]);
-//         Serial.print(", ");
-//         Serial.print(AR_coeff[0][1]);
-//         Serial.print(", ");
-//         Serial.println(AR_coeff[1][0]);
-// #endif
-//
-//         MPU6050_HTTP_send(AR_URL);
-//         //delay(100);
-//
-//         Serial.print("Status code: ");
-//         Serial.println(statusCode);
+    MPU_HTTP_POST[buffer_size++] = _BYTE('&');
+    MPU_HTTP_POST[buffer_size++] = _BYTE('&');
+    MPU_HTTP_POST[buffer_size++] = _BYTE('&');
+    MPU_HTTP_POST[buffer_size++] = _BYTE('I');
+    MPU_HTTP_POST[buffer_size++] = _BYTE('=');
+    String TX_counter_str = String(httpTXCounter, DEC);
+    memcpy(&MPU_HTTP_POST[buffer_size], (byte*)TX_counter_str.c_str(), TX_counter_str.length());
+    buffer_size += TX_counter_str.length();
+    httpTXCounter++;
+
+    // add mac address
+    // only need last two bytes of mac address
+    memcpy(&MPU_HTTP_POST[buffer_size], mac_addr_str.c_str(), mac_addr_str.length());
+    buffer_size += mac_addr_str.length();
+
+#ifdef DEBUG
+        Serial.print("AR coeff: ");
+        Serial.print(AR_coeff[0][0]);
+        Serial.print(", ");
+        Serial.print(AR_coeff[0][1]);
+        Serial.print(", ");
+        Serial.println(AR_coeff[1][0]);
+#endif
+
+        MPU6050_HTTP_send(AR_URL);
+        //delay(100);
+
+        Serial.print("Status code: ");
+        Serial.println(statusCode);
 }

@@ -105,7 +105,7 @@ uint16_t MPU6050_HTTP_post(MPU6050_VALUE_TS data)
         // buffer_counter += 14;
 
         MPU_HTTP_POST[buffer_size++] = _BYTE('|');
-        MPU_HTTP_POST[buffer_size++] = _BYTE('|');
+        MPU_HTTP_POST[buffer_size++] = _BYTE('a');
         return buffer_size;
     }
     else
