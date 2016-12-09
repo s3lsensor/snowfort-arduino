@@ -17,7 +17,21 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+#ifdef ARDUINO_ARCH_AVR
+#include <avr/version.h>
+#if (__AVR_LIBC_MAJOR__ < 2)
+#define WIFI_101_NO_TIME_H
+#endif
+#endif
+
+#ifndef WIFI_101_NO_TIME_H
 #include <time.h>
+#endif
+
+#if !defined(_TIME_H_) && !defined(TIME_H)
+// another library overrided the time.h header
+#define WIFI_101_NO_TIME_H
+#endif
 
 #include "WiFi101.h"
 
@@ -166,9 +180,9 @@ static void wifi_cb(uint8_t u8MsgType, void *pvMsg)
 		{
 			if (WiFi._resolve != 0) {
 				memcpy((tstrSystemTime *)WiFi._resolve, pvMsg, sizeof(tstrSystemTime));
-			}
 
-			WiFi._resolve = 0;
+				WiFi._resolve = 0;
+			}
 		}
 		break;
 
@@ -244,6 +258,7 @@ int WiFiClass::init()
 	_submask = 0;
 	_gateway = 0;
 	_dhcp = 1;
+	_resolve = 0;
 	memset(_client, 0, sizeof(WiFiClient *) * TCP_SOCK_MAX);
 
 	// Initialize IO expander LED control (rev A then rev B)..
@@ -579,6 +594,8 @@ void WiFiClass::end()
 	m2m_periph_gpio_set_val(M2M_PERIPH_GPIO15, 1);
 	m2m_periph_gpio_set_val(M2M_PERIPH_GPIO4, 1);
 
+	socketDeinit();
+
 	m2m_wifi_deinit(NULL);
 
 	nm_bsp_deinit();
@@ -828,6 +845,7 @@ int WiFiClass::hostByName(const char* aHostname, IPAddress& aResult)
 		}
 
 		aResult = _resolve;
+		_resolve = 0;
 		return 1;
 	}
 }
@@ -897,14 +915,21 @@ int WiFiClass::ping(IPAddress host, uint8_t ttl)
 	m2m_periph_gpio_set_val(M2M_PERIPH_GPIO5, 1);
 
 	if (_resolve == dstHost) {
+		_resolve = 0;
 		return WL_PING_TIMEOUT;
 	} else {
-		return (int)_resolve;
+		int rtt = (int)_resolve;
+		_resolve = 0;
+		return rtt;
 	}
 }
 
 uint32_t WiFiClass::getTime()
 {
+#ifdef WIFI_101_NO_TIME_H
+	#warning "No system <time.h> header included, WiFi.getTime() will always return 0"
+	return 0;
+#else
 	tstrSystemTime systemTime;
 
 	_resolve = (uint32_t)&systemTime;
@@ -939,6 +964,7 @@ uint32_t WiFiClass::getTime()
 	}
 
 	return t;
+#endif
 }
 
 WiFiClass WiFi;
